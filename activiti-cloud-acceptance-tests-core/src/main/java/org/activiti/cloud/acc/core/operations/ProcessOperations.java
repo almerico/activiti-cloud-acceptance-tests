@@ -6,6 +6,8 @@ import org.activiti.api.process.model.ProcessInstance;
 import org.jbehave.core.annotations.When;
 import org.activiti.cloud.acc.core.steps.runtime.ProcessRuntimeBundleSteps;
 
+import java.io.IOException;
+
 import static org.activiti.cloud.acc.core.helper.ProcessDefinitionRegistry.processDefinitionKeyMatcher;
 
 public class ProcessOperations {
@@ -15,7 +17,7 @@ public class ProcessOperations {
 
     //TODO: change the reference to this method once the previous one is deleted
     @When("the user starts a process called $processName")
-    public void startProcess(String processName) {
+    public void startProcess(String processName) throws IOException {
 
         ProcessInstance processInstance = processRuntimeBundleSteps.startProcess(
                 processDefinitionKeyMatcher(processName), false);
@@ -24,7 +26,7 @@ public class ProcessOperations {
     }
 
     @When("the user starts a process with variables called $processName")
-    public void startProcessWithVariables(String processName){
+    public void startProcessWithVariables(String processName) throws IOException {
         ProcessInstance processInstance = processRuntimeBundleSteps.startProcess(
                 processDefinitionKeyMatcher(processName), true);
 
