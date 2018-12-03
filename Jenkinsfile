@@ -37,7 +37,7 @@ pipeline {
       }
       stage('Build Release') {
         when {
-          branch 'master'
+          branch 'develop'
         }
         steps {
           container('maven') {
@@ -63,7 +63,7 @@ pipeline {
       }
       stage('Promote to Environments') {
         when {
-          branch 'master'
+          branch 'develop'
         }
         steps {
           container('maven') {
