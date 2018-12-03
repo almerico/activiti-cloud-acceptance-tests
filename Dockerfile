@@ -29,4 +29,4 @@ EXPOSE 8080
 RUN git clone https://github.com/almerico/activiti-cloud-acceptance-tests.git
 RUN cd activiti-cloud-acceptance-tests&&mvn clean install -DskipTests 
 
-CMD [ "/usr/bin/mvn verify" ]
+ENTRYPOINT [ "/usr/bin/mvn", "verify" ]
