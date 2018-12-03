@@ -1,6 +1,6 @@
 github:
   organisations:
-  - name: activiti
+  - name: almerico
     repositories:
     - name: activiti-cloud-dependencies
       branch: develop
