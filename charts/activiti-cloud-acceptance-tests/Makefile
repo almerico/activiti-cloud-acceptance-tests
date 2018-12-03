@@ -4,12 +4,18 @@ NAME := activiti-cloud-acceptance-tests
 OS := $(shell uname)
 RELEASE_VERSION := $(shell cat ../../VERSION)
 
+GITHUB_CHARTS_REPO := $(or $(GITHUB_CHARTS_REPO),$(shell git config --get remote.origin.url))
+GITHUB_CHARTS_BRANCH := $(or $(GITHUB_CHARTS_BRANCH),gh-pages)
+
 build: clean
-	rm -rf requirements.lock
+	helm init --client-only
+	helm repo add almerico https://almerico.github.io/helmrepo/
+	helm repo add activiti https://activiti.github.io/activiti-cloud-charts/
 	helm dependency build
 	helm lint
+	helm install . --name ${NAME} --debug --dry-run
 
-install: clean build
+install:  build
 	helm install . --name ${NAME}
 
 upgrade: clean build
@@ -19,16 +25,26 @@ delete:
 	helm delete --purge ${NAME}
 
 clean:
+	rm -rf requirements.lock
 	rm -rf charts
 	rm -rf ${NAME}*.tgz
 
-release: clean
-	helm dependency build
-	helm lint
-	helm init --client-only
+release: build
 	helm package .
-	curl --fail -u $(CHARTMUSEUM_CREDS_USR):$(CHARTMUSEUM_CREDS_PSW) --data-binary "@$(NAME)-$(shell sed -n 's/^version: //p' Chart.yaml).tgz" $(CHART_REPO)/api/charts
-	rm -rf ${NAME}*.tgz%
+	curl  -u $(CHARTMUSEUM_CREDS_USR):$(CHARTMUSEUM_CREDS_PSW) --data-binary "@$(NAME)-$(shell sed -n 's/^version: //p' Chart.yaml).tgz" $(CHART_REPO)/api/charts
+#	rm -rf ${NAME}*.tgz%
+
+github:
+	$(eval GITHUB_CHARTS_DIR := $(shell basename $(GITHUB_CHARTS_REPO) .git))
+	git clone -b "$(GITHUB_CHARTS_BRANCH)" "$(GITHUB_CHARTS_REPO)" $(GITHUB_CHARTS_DIR)
+	cp "$(NAME)-$(RELEASE_VERSION).tgz" $(GITHUB_CHARTS_DIR)
+	cd $(GITHUB_CHARTS_DIR) && \
+	   helm repo index . && \
+	   git add . && \
+	   git status && \
+	   git commit -m "fix:(version) release $(NAME)-$(RELEASE_VERSION).tgz" && \
+	   git push origin "$(GITHUB_CHARTS_BRANCH)"
+	rm -rf $(GITHUB_CHARTS_DIR)
 
 tag:
 ifeq ($(OS),Darwin)
@@ -36,7 +52,7 @@ ifeq ($(OS),Darwin)
 	sed -i "" -e "s/tag: .*/tag: $(RELEASE_VERSION)/" values.yaml
 else ifeq ($(OS),Linux)
 	sed -i -e "s/version:.*/version: $(RELEASE_VERSION)/" Chart.yaml
-	sed -i -e "s|repository: .*|repository: $(DOCKER_REGISTRY)\/activiti\/activiti-cloud-acceptance-tests|" values.yaml
+	sed -i -e "s|repository: .*|repository: $(DOCKER_REGISTRY)/almerico/activiti-cloud-acceptance-tests|" values.yaml
 	sed -i -e "s/tag: .*/tag: $(RELEASE_VERSION)/" values.yaml
 else
 	echo "platfrom $(OS) not supported to release from"
