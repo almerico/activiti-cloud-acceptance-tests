@@ -3,9 +3,11 @@ pipeline {
       label "jenkins-maven"
     }
     environment {
-      ORG               = 'activiti'
+      ORG               = 'almerico'
       APP_NAME          = 'activiti-cloud-acceptance-tests'
       CHARTMUSEUM_CREDS = credentials('jenkins-x-chartmuseum')
+      GITHUB_CHARTS_REPO    = "https://github.com/almerico/helmrepo.git"
+      GITHUB_HELM_REPO_URL = "https://almerico.github.io/helmrepo"
     }
     stages {
       stage('CI Build and push snapshot') {
@@ -20,91 +22,70 @@ pipeline {
         steps {
           container('maven') {
             sh "mvn versions:set -DnewVersion=$PREVIEW_VERSION"
-            sh "mvn install"
-            sh 'export VERSION=$PREVIEW_VERSION' 
+            sh "mvn install -DskipTests"
+            sh 'export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold.yaml'
+
+//           skip building docker image for now
+   //        sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION"
 
 
-          
+             dir(".charts/$APP_NAME") {
+               sh "make build"
+             }
           }
-
         }
       }
       stage('Build Release') {
         when {
-          branch 'develop'
+          branch 'master'
         }
         steps {
           container('maven') {
             // ensure we're not on a detached head
-            sh "git checkout develop"
+            sh "git checkout master"
             sh "git config --global credential.helper store"
 
             sh "jx step git credentials"
             // so we can retrieve the version in later steps
             sh "echo \$(jx-release-version) > VERSION"
             sh "mvn versions:set -DnewVersion=\$(cat VERSION)"
-            sh "mvn clean verify"
 
-            sh "git add --all"
-            sh "git commit -m \"Release \$(cat VERSION)\" --allow-empty"
-            sh "git tag -fa v\$(cat VERSION) -m \"Release version \$(cat VERSION)\""
-            sh "git push origin v\$(cat VERSION)"
+            dir ("./charts/$APP_NAME") {
+              sh "make tag"
+            }
+            sh 'mvn clean deploy'
 
-          }
-          
-          container('maven') {
-            sh 'mvn clean deploy -DskipTests'
+            sh 'export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml'
 
-            sh 'export VERSION=`cat VERSION`' 
-            sh "updatebot version"
-            sh "updatebot push-version --kind maven org.activiti.cloud.acc:activiti-cloud-acceptance-tests-dependencies \$(cat VERSION)"
-            sh "updatebot update --merge false"
+            sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat VERSION)"
           }
         }
       }
-      stage('Build Release from Tag') {
+      stage('Promote to Environments') {
         when {
-          tag '*RELEASE'
+          branch 'master'
         }
         steps {
           container('maven') {
-            // ensure we're not on a detached head
-            sh "git checkout $TAG_NAME"
-            sh "git config --global credential.helper store"
+            dir ("./charts/$APP_NAME") {
+              sh 'jx step changelog --version v\$(cat ../../VERSION)'
 
-            sh "jx step git credentials"
-            // so we can retrieve the version in later steps
-            sh "echo \$TAG_NAME > VERSION"
-            sh "mvn versions:set -DnewVersion=\$(cat VERSION)"
-          }
-          container('maven') {
-            sh '''
-              mvn clean deploy -P !alfresco -P central
-              '''
+              // release the helm chart
+              sh 'make release'
+              // promote through all 'Auto' promotion Environments
+//            sh 'jx promote -b --all-auto --timeout 1h --version \$(cat ../../VERSION) --no-wait'
+               sh 'jx step git credentials'
+               sh 'jx promote -b --all-auto --helm-repo-url=$GITHUB_HELM_REPO_URL --timeout 1h --version \$(cat ../../VERSION) --no-wait'
 
-            sh 'export VERSION=`cat VERSION`'
-
-            sh "git config --global credential.helper store"
-
-            sh "jx step git credentials"
-
-            sh "echo pushing with update using version \$(cat VERSION)"
-            sh "updatebot version"
-            sh "updatebot push-version --kind maven org.activiti.cloud.acc:activiti-cloud-acceptance-tests-dependencies \$(cat VERSION)"
-            
+            }
           }
         }
       }
-    }
+    }  
+    
     post {
         always {
             cleanWs()
         }
-        failure {
-            input """Pipeline failed. 
-                  We will keep the build pod around to help you diagnose any failures. 
-
-                  Select Proceed or Abort to terminate the build pod"""
-        }
     }
-  }
+}
