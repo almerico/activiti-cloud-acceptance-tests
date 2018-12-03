@@ -6,6 +6,14 @@ image:
   repository: draft
   tag: dev
   pullPolicy: IfNotPresent
+  extraEnv: |
+  - name: SSO_HOST_ARG
+    value: "activiti-keycloak.jx-staging.35.187.184.216.nip.io"
+  - name: GATEWAY_HOST
+    value: "activiti-cloud-gateway.jx-staging.35.187.184.216.nip.io"
+  - name: REALM
+    value: "activiti"
+    
 service:
   name: activiti-cloud-acceptance-tests
   type: ClusterIP
