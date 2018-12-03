@@ -3,8 +3,8 @@
 # Declare variables to be passed into your templates.
 replicaCount: 1
 image:
-  repository: draft
-  tag: dev
+  repository: 10.7.251.133:5000/almerico/activiti-cloud-acceptance-tests
+  tag: 7.0.15
   pullPolicy: IfNotPresent
   extraEnv: |
     - name: SSO_HOST_ARG

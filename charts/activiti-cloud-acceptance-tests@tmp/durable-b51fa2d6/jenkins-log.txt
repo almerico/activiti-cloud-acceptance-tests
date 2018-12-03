@@ -1,0 +1,5 @@
++ make tag
+sed -i -e "s/version:.*/version: 7.0.15/" Chart.yaml
+sed -i -e "s|repository: .*|repository: 10.7.251.133:5000/almerico/activiti-cloud-acceptance-tests|" values.yaml
+sed -i -e "s/tag: .*/tag: 7.0.15/" values.yaml
+git add --all
