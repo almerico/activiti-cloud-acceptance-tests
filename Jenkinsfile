@@ -28,15 +28,11 @@ pipeline {
             // sh "mvn install -DskipTests"
             // sh 'export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold.yaml'
             sh "mvn clean install -DskipTests && mvn clean verify"
-
-
 //           skip building docker image for now
    //        sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION"
-
-
-             dir(".charts/$APP_NAME") {
-               sh "make build"
-             }
+            //  dir(".charts/$APP_NAME") {
+              //  sh "make build"
+            //  }
           }
         }
       }
@@ -52,12 +48,12 @@ pipeline {
 
             sh "jx step git credentials"
             // so we can retrieve the version in later steps
-            sh "echo \$(jx-release-version) > VERSION"
-            sh "mvn versions:set -DnewVersion=\$(cat VERSION)"
+            // sh "echo \$(jx-release-version) > VERSION"
+            // sh "mvn versions:set -DnewVersion=\$(cat VERSION)"
 
-            dir ("./charts/$APP_NAME") {
-              sh "make tag"
-            }
+            // dir ("./charts/$APP_NAME") {
+              // sh "make tag"
+            // }
             //sh 'mvn clean deploy'
             sh "mvn clean install -DskipTests && mvn clean verify"
             //sh 'export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml'
