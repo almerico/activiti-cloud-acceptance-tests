@@ -10,7 +10,7 @@ pipeline {
       GITHUB_HELM_REPO_URL = "https://almerico.github.io/helmrepo"
       GATEWAY_HOST = "activiti-cloud-gateway.jx-staging.35.228.195.195.nip.io"
       SSO_HOST = "activiti-keycloak.jx-staging.35.228.195.195.nip.io"
-      REALM = springboot
+      REALM = "springboot"
     }
     stages {
       stage('CI Build and push snapshot') {
