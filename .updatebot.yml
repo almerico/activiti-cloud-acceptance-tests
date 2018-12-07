@@ -1,7 +1,0 @@
-github:
-  organisations:
-  - name: almerico
-    repositories:
-    - name: activiti-cloud-dependencies
-      branch: develop
-      useSinglePullRequest: true      

@@ -1,4 +1,4 @@
-CHART_REPO := http://jenkins-x-chartmuseum:8080
+#CHART_REPO := http://jenkins-x-chartmuseum:8080
 CURRENT=$(pwd)
 NAME := activiti-cloud-acceptance-tests
 OS := $(shell uname)
@@ -9,8 +9,6 @@ GITHUB_CHARTS_BRANCH := $(or $(GITHUB_CHARTS_BRANCH),gh-pages)
 
 build: clean
 	helm init --client-only
-	helm repo add almerico https://almerico.github.io/helmrepo/
-	helm repo add activiti https://activiti.github.io/activiti-cloud-charts/
 	helm dependency build
 	helm lint
 	helm install . --name ${NAME} --debug --dry-run
@@ -31,7 +29,7 @@ clean:
 
 release: build
 	helm package .
-	curl  -u $(CHARTMUSEUM_CREDS_USR):$(CHARTMUSEUM_CREDS_PSW) --data-binary "@$(NAME)-$(shell sed -n 's/^version: //p' Chart.yaml).tgz" $(CHART_REPO)/api/charts
+#	curl  -u $(CHARTMUSEUM_CREDS_USR):$(CHARTMUSEUM_CREDS_PSW) --data-binary "@$(NAME)-$(shell sed -n 's/^version: //p' Chart.yaml).tgz" $(CHART_REPO)/api/charts
 #	rm -rf ${NAME}*.tgz%
 
 github:
